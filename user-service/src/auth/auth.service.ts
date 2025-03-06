@@ -1,15 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
-    private prisma = new PrismaClient();
-
-    constructor(private readonly jwtService: JwtService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly jwtService: JwtService
+    ) { }
 
     async validateUser(email: string, password: string) {
         const user = await this.prisma.user.findUnique({ where: { email } });
@@ -21,24 +21,27 @@ export class AuthService {
         return user;
     }
 
-    async register(dto: RegisterDto) {
+    async register(dto: AuthDto) {
+        const userExists = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+
+        if (userExists) throw new ConflictException('User with this email already exists');
+
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-        const user = await this.prisma.user.create({
+        return this.prisma.user.create({
             data: {
                 email: dto.email,
                 password: hashedPassword,
             },
         });
-
-        return { message: 'User registered successfully', user: { id: user.id, email: user.email } };
     }
 
-
-    async login(dto: LoginDto) {
+    async login(dto: AuthDto) {
         const user = await this.validateUser(dto.email, dto.password);
         const token = this.jwtService.sign({ userId: user.id });
 
-        return { access_token: token };
+        return { token: token };
     }
 }
