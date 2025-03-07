@@ -4,6 +4,8 @@ import { KafkaService } from '../kafka/kafka.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UserService {
@@ -28,6 +30,9 @@ export class UserService {
         username: dto.username,
         email: dto.email,
         password: hashedPassword,
+        profile: {
+          create: {},
+        }
       },
       include: { profile: true },
     });
@@ -56,11 +61,17 @@ export class UserService {
   }
 
   async getAllUsers() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany(
+      { include: { profile: true } }
+    );
   }
 
   async getById(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique(
+      {
+        where: { id: userId },
+        include: { profile: true },
+      });
 
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -79,18 +90,31 @@ export class UserService {
         phone: dto.phone,
         password: dto.password,
       },
-      select: { id: true, email: true, username: true, phone: true },
+      include: { profile: true },
     });
 
     return updatedUser;
   }
 
   async delete(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { profile: { select: { image: true } } },
+    });
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.profile?.image) {
+      const imagePath = path.join(__dirname,  '..', '..', 'uploads' , 'profile-pictures', user.profile.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath); 
+      }
+    }
 
     await this.prisma.user.delete({ where: { id: userId } });
+
     return { message: 'User deleted successfully' };
   }
 }

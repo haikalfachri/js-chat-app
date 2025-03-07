@@ -34,9 +34,14 @@ export class AuthService {
             data: {
                 email: dto.email,
                 password: hashedPassword,
+                profile: {
+                    create: {},
+                },
             },
+            include: { profile: true },
         });
     }
+
 
     async login(dto: AuthDto) {
         const user = await this.validateUser(dto.email, dto.password);

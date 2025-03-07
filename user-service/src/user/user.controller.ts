@@ -14,6 +14,8 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller('users')
 export class UserController {
