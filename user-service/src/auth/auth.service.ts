@@ -3,12 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { AuthDto } from './dto/auth.dto';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly kafkaService: KafkaService,
     ) { }
 
     async validateUser(email: string, password: string) {
@@ -29,8 +31,7 @@ export class AuthService {
         if (userExists) throw new ConflictException('User with this email already exists');
 
         const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-        return this.prisma.user.create({
+        const user = await this.prisma.user.create({
             data: {
                 email: dto.email,
                 password: hashedPassword,
@@ -40,6 +41,12 @@ export class AuthService {
             },
             include: { profile: true },
         });
+
+        await this.kafkaService.sendMessage('user.registered', {
+            id: user.id,
+        });
+
+        return user
     }
 
 

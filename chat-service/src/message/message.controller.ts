@@ -1,12 +1,20 @@
-import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { MessageService } from './message.service';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
-@Controller()
+@Controller('messages')
+// @UseGuards(JwtAuthGuard)
 export class MessageController {
-  private readonly logger = new Logger(MessageController.name);
+  constructor(private readonly messageService: MessageService) {}
 
-  @EventPattern('user.registered')
-  async handleUserRegistered(@Payload() data: { userId: string; username: string }) {
-    this.logger.log(`New user registered: ${data.username} (ID: ${data.userId})`);
+  @Post()
+  async sendMessage(@Req() req, @Body() dto: CreateMessageDto) {
+    return this.messageService.sendMessage(req.user.id, dto);
+  }
+
+  @Get(':contactId')
+  async getMessages(@Req() req, @Param('contactId') contactId: string) {
+    return this.messageService.getMessages(req.user.id, contactId);
   }
 }

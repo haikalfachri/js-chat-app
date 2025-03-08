@@ -1,27 +1,30 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Kafka, Consumer } from 'kafkajs';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateMessageDto } from './dto/create-message.dto';
 
 @Injectable()
-export class MessageService implements OnModuleInit {
-  private kafka = new Kafka({
-    clientId: 'message-service',
-    brokers: ['localhost:9092'],
-  });
+export class MessageService {
+  constructor(private readonly prisma: PrismaService) { }
 
-  private consumer: Consumer = this.kafka.consumer({ groupId: 'message-group' });
-
-  async onModuleInit() {
-    await this.consumer.connect();
-    console.log('🔥 Kafka Consumer Connected');
-
-    await this.consumer.subscribe({ topic: 'user.registered', fromBeginning: true });
-
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        if (message.value !== null) {
-          console.log(`📥 Received message on topic "${topic}":`, message.value.toString());
-        }
+  async sendMessage(senderId: string, dto: CreateMessageDto) {
+    return this.prisma.message.create({
+      data: {
+        senderId,
+        receiverId: dto.receiverId,
+        content: dto.content,
       },
+    });
+  }
+
+  async getMessages(userId: string, contactId: string) {
+    return this.prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: contactId },
+          { senderId: contactId, receiverId: userId },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }
