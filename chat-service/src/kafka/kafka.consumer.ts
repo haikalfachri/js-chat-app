@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Kafka, EachMessagePayload, Consumer } from 'kafkajs';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -6,32 +6,32 @@ import { PrismaService } from '../prisma/prisma.service';
 export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(KafkaConsumerService.name);
     private kafka: Kafka;
-    private consumer: Consumer | null = null;
-    private kafkaEnabled = false; // Start with Kafka disabled
-    private reconnectInterval = 5000; // 5 seconds
+    private consumer: Consumer;
+    private isKafkaConnected = false;
 
     constructor(private prisma: PrismaService) {
         const brokers = process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'];
+
         this.kafka = new Kafka({
             clientId: 'chat-service',
             brokers,
         });
+
+        this.consumer = this.kafka.consumer({ groupId: 'chat-group' });
     }
 
     async onModuleInit() {
-        this.connectToKafka();
+        await this.connectConsumer();
     }
 
-    private async connectToKafka() {
-        if (this.consumer) return; // Prevent duplicate consumers
-
-        this.consumer = this.kafka.consumer({ groupId: 'chat-group' });
-
+    private async connectConsumer() {
         try {
             await this.consumer.connect();
-            await this.consumer.subscribe({ topic: 'user.registered', fromBeginning: false });
-            this.kafkaEnabled = true;
-            this.logger.log('🎧 Successfully connected to Kafka and listening to user.registered topic.');
+            this.isKafkaConnected = true;
+            this.logger.log('✅ Kafka Consumer connected successfully');
+
+            await this.consumer.subscribe({ topic: 'user.registered', fromBeginning: false }); 
+            this.logger.log('🎧 Listening to user.registered topic...');
 
             await this.consumer.run({
                 eachMessage: async ({ message }: EachMessagePayload) => {
@@ -40,11 +40,15 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
                             this.logger.error(`❌ Received empty message`);
                             return;
                         }
+
                         const userData = JSON.parse(message.value.toString());
                         this.logger.log(`📥 Received user data: ${JSON.stringify(userData)}`);
 
+                        // ✅ Store user data in chat-service's database
                         await this.prisma.user.create({
-                            data: { id: userData.id },
+                            data: {
+                                id: userData.id,
+                            },
                         });
 
                         this.logger.log(`✅ User stored successfully in chat-service DB`);
@@ -53,34 +57,16 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
                     }
                 },
             });
-
-            this.consumer.on('consumer.disconnect', async () => {
-                this.logger.warn('⚠️ Kafka consumer disconnected. Attempting to reconnect...');
-                this.kafkaEnabled = false;
-                this.consumer = null;
-                this.scheduleReconnect();
-            });
         } catch (error) {
-            this.logger.warn('⚠️ Kafka connection failed. Retrying...');
-            this.kafkaEnabled = false;
-            this.consumer = null;
-            this.scheduleReconnect();
+            this.isKafkaConnected = false;
+            this.logger.warn('⚠️ Kafka is unavailable. Retrying connection...');
+            setTimeout(() => this.connectConsumer(), 5000); // Retry after 5 seconds
         }
-    }
-
-    private scheduleReconnect() {
-        setTimeout(() => {
-            if (!this.kafkaEnabled) {
-                this.logger.log('🔄 Attempting to reconnect to Kafka...');
-                this.connectToKafka();
-            }
-        }, this.reconnectInterval);
     }
 
     async onModuleDestroy() {
         if (this.consumer) {
             await this.consumer.disconnect();
-            this.logger.log('🔌 Kafka consumer disconnected.');
         }
     }
 }
