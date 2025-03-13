@@ -68,3 +68,6 @@ npx prisma migrate dev
 
 # Start the service
 npm run start
+
+# Or watching
+npm run start:dev

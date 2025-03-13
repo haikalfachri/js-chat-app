@@ -54,5 +54,22 @@ This service handles real-time messaging using WebSockets and Kafka.
   });
 
 ### ➡️ Additional Information
-- Connect to websocket (socket.io) and add websocket event to listen a new message
-- Create message is like a typing message and then hit send button
+- Connect to websocket (socket.io) and add websocket event to listen to new messages,
+- Create message is like a typing message and hit send button,
+
+## 🛠 Setup & Installation
+```sh
+# Install dependencies
+npm install
+
+# Set up environment variables (.env)
+cp .env.example .env
+
+# Run migrations
+npx prisma migrate dev
+
+# Start the service 
+npm run start
+
+# Or watching
+npm run start:dev
