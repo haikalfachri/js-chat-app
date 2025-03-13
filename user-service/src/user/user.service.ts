@@ -45,20 +45,6 @@ export class UserService {
     return user;
   }
 
-  async updateUserStatus(userId: string, isOnline: boolean) {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { isOnline },
-    });
-
-    await this.kafkaService.sendMessage('user.status.updated', {
-      userId: user.id,
-      isOnline: user.isOnline,
-    });
-
-    return user;
-  }
-
   async getAllUsers() {
     return this.prisma.user.findMany(
       { include: { profile: true } }

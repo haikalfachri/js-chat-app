@@ -9,15 +9,15 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EventPattern, Payload } from '@nestjs/microservices';
-import * as fs from 'fs';
-import * as path from 'path';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
@@ -61,13 +61,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT) // Explicit 204 No Content
+  @HttpCode(HttpStatus.NO_CONTENT) 
   async deleteUser(@Param('id') userId: string) {
     await this.userService.delete(userId);
-  }
-
-  @EventPattern('user.status')
-  async handleUserStatusUpdate(@Payload() data: { userId: string; isOnline: boolean }) {
-    return this.userService.updateUserStatus(data.userId, data.isOnline);
   }
 }

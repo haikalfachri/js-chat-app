@@ -29,7 +29,7 @@ export class MessageService {
     // await this.kafkaService.sendMessage('chat.new-message', message);
 
     // ✅ Emit message to WebSocket clients in real-time
-    this.messageGateway.sendMessageToUser(dto.receiverId, message.content);
+    this.messageGateway.handleMessage(dto.receiverId, message.content);
 
     return message;
   }

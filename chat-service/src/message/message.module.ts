@@ -4,11 +4,12 @@ import { MessageController } from './message.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { KafkaModule } from '../kafka/kafka.module';
 import { MessageGateway } from './message.gateway';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [ PrismaModule, KafkaModule],
-  controllers: [MessageController], // Registers the controller
-  providers: [MessageService, MessageGateway], // Registers the service
-  exports: [MessageService], // Allows other modules to use MessageService
+  controllers: [MessageController], 
+  providers: [MessageService, MessageGateway, JwtService], 
+  exports: [MessageService], 
 })
 export class MessageModule {}

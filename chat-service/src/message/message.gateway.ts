@@ -1,6 +1,8 @@
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { PrismaService } from '../prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -40,8 +42,10 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   // 🔹 Send message to a specific user by receiverId
-  sendMessageToUser(receiverId: string, message: any) {
+  @UseGuards(JwtAuthGuard) // ✅ Apply WebSocket JWT Guard here
+  handleMessage(receiverId: string, message: any) {
     const receiverSocketId = this.onlineUsers.get(receiverId);
+    console.log(message);
     if (receiverSocketId) {
       this.server.to(receiverSocketId).emit('newMessage', message);
       console.log(`📩 Sent message to user ${receiverId}:`, message);
