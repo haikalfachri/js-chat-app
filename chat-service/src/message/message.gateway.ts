@@ -1,4 +1,5 @@
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { PrismaService } from '../prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -6,18 +7,29 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @WebSocketServer() server: Server;
   private onlineUsers = new Map<string, string>(); // Maps userId -> socketId
 
-  async handleConnection(socket: Socket) {
-    console.log(`🚀 New connection attempt:`, socket.handshake);
-    const userId = socket.handshake.query.userId as string;
+  constructor(private readonly prisma: PrismaService) {}
 
+  async handleConnection(socket: Socket) {
+    const userId = socket.handshake.query.userId as string;
     if (userId) {
-      this.onlineUsers.set(userId, socket.id);
-      console.log(`✅ User ${userId} connected with socket ID ${socket.id}`);
-    } else {
-      console.log("⚠️ Connection rejected: No userId provided");
-      socket.disconnect(); // Optionally reject connection
+        this.onlineUsers.set(userId, socket.id);
+
+        // Send undelivered messages
+        const undeliveredMessages = await this.prisma.message.findMany({
+            where: { receiverId: userId, isDelivered: false },
+        });
+
+        undeliveredMessages.forEach(async (message) => {
+            this.server.to(socket.id).emit('newMessage', message);
+            await this.prisma.message.update({
+                where: { id: message.id },
+                data: { isDelivered: true },
+            });
+        });
+
+        console.log(`✅ User ${userId} connected, sent undelivered messages.`);
     }
-  }
+}
 
   async handleDisconnect(socket: Socket) {
     const userId = [...this.onlineUsers.entries()].find(([_, id]) => id === socket.id)?.[0];

@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { KafkaService } from '../kafka/kafka.service';
+// import { KafkaService } from '../kafka/kafka.service';
 import { MessageGateway } from './message.gateway';
 
 @Injectable()
 export class MessageService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly kafkaService: KafkaService,
+    // private readonly kafkaService: KafkaService,
     private readonly messageGateway: MessageGateway,
   ) { }
 
