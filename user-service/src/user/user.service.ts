@@ -39,7 +39,6 @@ export class UserService {
 
     await this.kafkaService.sendMessage('user.registered', {
       id: user.id,
-      email: user.email,
       username: user.username,
     });
 
@@ -93,6 +92,11 @@ export class UserService {
       include: { profile: true },
     });
 
+    await this.kafkaService.sendMessage('user.updated', {
+      id: updatedUser.id,
+      username: updatedUser.username,
+    });
+
     return updatedUser;
   }
 
@@ -114,6 +118,10 @@ export class UserService {
     }
 
     await this.prisma.user.delete({ where: { id: userId } });
+
+    await this.kafkaService.sendMessage('user.deleted', {
+      id: userId,
+    });
 
     return { message: 'User deleted successfully' };
   }

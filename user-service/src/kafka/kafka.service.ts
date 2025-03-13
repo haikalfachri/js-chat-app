@@ -15,7 +15,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       : ['localhost:9092'];
 
     this.kafka = new Kafka({
-      clientId: 'chat-service',
+      clientId: 'user-service',
       brokers,
     });
 

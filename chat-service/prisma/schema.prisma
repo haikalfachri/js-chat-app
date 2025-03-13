@@ -19,9 +19,10 @@ model Message {
   receiverId String
   content    String
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -32,8 +33,8 @@ model User {
 }
 
 model FailedMessage {
-  id        String   @id @default(uuid()) 
-  topic     String   
-  message   String   
+  id        String   @id @default(uuid())
+  topic     String
+  message   String
   createdAt DateTime @default(now())
 }

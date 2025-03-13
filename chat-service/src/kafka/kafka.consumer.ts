@@ -9,6 +9,8 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     private consumer: Consumer;
     private isKafkaConnected = false;
 
+    private readonly topics = ['user.registered', 'chat.new-message', 'user.updated', 'user.deleted']; // ✅ Add multiple topics here
+
     constructor(private prisma: PrismaService) {
         const brokers = process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'];
 
@@ -30,30 +32,42 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
             this.isKafkaConnected = true;
             this.logger.log('✅ Kafka Consumer connected successfully');
 
-            await this.consumer.subscribe({ topic: 'user.registered', fromBeginning: false }); 
-            this.logger.log('🎧 Listening to user.registered topic...');
+            // ✅ Subscribe to multiple topics
+            for (const topic of this.topics) {
+                await this.consumer.subscribe({ topic, fromBeginning: false });
+                this.logger.log(`🎧 Listening to topic: ${topic}`);
+            }
 
             await this.consumer.run({
-                eachMessage: async ({ message }: EachMessagePayload) => {
+                eachMessage: async ({ topic, message }: EachMessagePayload) => {
                     try {
                         if (!message.value) {
-                            this.logger.error(`❌ Received empty message`);
+                            this.logger.error(`❌ Received empty message from ${topic}`);
                             return;
                         }
 
-                        const userData = JSON.parse(message.value.toString());
-                        this.logger.log(`📥 Received user data: ${JSON.stringify(userData)}`);
+                        const parsedData = JSON.parse(message.value.toString());
+                        this.logger.log(`📥 Received message from ${topic}: ${JSON.stringify(parsedData)}`);
 
-                        // ✅ Store user data in chat-service's database
-                        await this.prisma.user.create({
-                            data: {
-                                id: userData.id,
-                            },
-                        });
-
-                        this.logger.log(`✅ User stored successfully in chat-service DB`);
+                        // ✅ Handle different topics
+                        switch (topic) {
+                            case 'user.registered':
+                                await this.handleUserRegistered(parsedData);
+                                break;
+                            case 'user.updated':
+                                await this.handleUserUpdated(parsedData);
+                                break;
+                            case 'chat.new-message':
+                                await this.handleChatMessage(parsedData);
+                                break;
+                            case 'user.deleted':
+                                await this.handleUserDeleted(parsedData);
+                                break;
+                            default:
+                                this.logger.warn(`⚠️ No handler for topic: ${topic}`);
+                        }
                     } catch (error) {
-                        this.logger.error(`❌ Failed to process user registration: ${error.message}`);
+                        this.logger.error(`❌ Failed to process message from ${topic}: ${error.message}`);
                     }
                 },
             });
@@ -62,6 +76,46 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
             this.logger.warn('⚠️ Kafka is unavailable. Retrying connection...');
             setTimeout(() => this.connectConsumer(), 5000); // Retry after 5 seconds
         }
+    }
+
+    private async handleUserRegistered(userData: any) {
+        await this.prisma.user.create({
+            data: {
+                id: userData.id,
+                username: userData.username,
+            },
+        });
+        this.logger.log(`✅ User stored successfully in message-service DB`);
+    }
+
+    private async handleUserUpdated(userData: any) {
+        await this.prisma.user.update({
+            where: { id: userData.id },
+            data: {
+               username: userData.username,
+            },
+        },);
+
+        this.logger.log(`✅ User stored successfully in message-service DB`);
+    }
+
+    private async handleUserDeleted(userData: any) {
+        await this.prisma.user.delete({
+            where: { id: userData.id },
+        },);
+
+        this.logger.log(`✅ User stored successfully in message-service DB`);
+    }
+
+    private async handleChatMessage(messageData: any) {
+        await this.prisma.message.create({
+            data: {
+                senderId: messageData.senderId,
+                receiverId: messageData.receiverId,
+                content: messageData.content,
+            },
+        });
+        this.logger.log(`✅ Chat message stored successfully`);
     }
 
     async onModuleDestroy() {
