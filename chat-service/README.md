@@ -65,7 +65,7 @@ This service handles real-time messaging using WebSockets and Kafka.
   2. Swagger only documents the payload, but won’t execute websocket events.
   3. Here is the example of websocket consume using **Postman**:
 
-    ![WebSocket Postman Example](https://raw.githubusercontent.com/haikalfachri/js-chat-app/main/websocket-postman-example.jpg)
+    ![WebSocket Postman Example](https://github.com/haikalfachri/js-chat-app/blob/master/chat-service/websocket-postman-example.png?raw=true)
 
 ## 🛠 Setup & Installation
 ```sh
