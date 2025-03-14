@@ -1,6 +1,11 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
-import { PrismaService } from '../prisma/prisma.service';
+import { 
+  WebSocketGateway, 
+  WebSocketServer, 
+  OnGatewayConnection, 
+  OnGatewayDisconnect 
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 
@@ -22,7 +27,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
         });
 
         undeliveredMessages.forEach(async (message) => {
-            this.server.to(socket.id).emit('newMessage', message);
+            this.server.to(socket.id).emit('newMessage', message.content);
             await this.prisma.message.update({
                 where: { id: message.id },
                 data: { isDelivered: true },
@@ -31,7 +36,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
         console.log(`✅ User ${userId} connected, sent undelivered messages.`);
     }
-}
+  }
 
   async handleDisconnect(socket: Socket) {
     const userId = [...this.onlineUsers.entries()].find(([_, id]) => id === socket.id)?.[0];
@@ -41,8 +46,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
   }
 
-  // 🔹 Send message to a specific user by receiverId
-  @UseGuards(JwtAuthGuard) // ✅ Apply WebSocket JWT Guard here
+  @UseGuards(JwtAuthGuard) 
   handleMessage(receiverId: string, message: any) {
     const receiverSocketId = this.onlineUsers.get(receiverId);
     console.log(message);

@@ -39,6 +39,10 @@ This service handles real-time messaging using WebSockets and Kafka.
 | POST   | `/messages` | Create message, type new message |
 | GET  | `/messages/:user1/:user2` | Retreive chat history between 2 users|
 
+### 👤 User 
+| Method | Endpoint      | Description                     |
+|--------|-------------|---------------------------------|
+| GET    | `/users` | Fetch all users, created by user-service|
 
 ## 📜 WebSocket Events
 | Event Name | Description                     |
@@ -56,6 +60,12 @@ This service handles real-time messaging using WebSockets and Kafka.
 ### ➡️ Additional Information
 - Connect to websocket (socket.io) and add websocket event to listen to new messages,
 - Create message is like a typing message and hit send button,
+- Since Swagger does not support real-time WebSockets, you can:
+  1. Use Postman / Socket.IO client to connect WebSocket.
+  2. Swagger only documents the payload, but won’t execute websocket events.
+  3. Here is the example of websocket consume using **Postman**:
+
+    ![WebSocket Postman Example](https://raw.githubusercontent.com/haikalfachri/js-chat-app/main/websocket-postman-example.jpg)
 
 ## 🛠 Setup & Installation
 ```sh

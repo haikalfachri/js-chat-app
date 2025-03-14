@@ -28,4 +28,4 @@
 ## To be updated
 - More error handling
 - Live status indicator
-- Swagger/Postman docs
+- Send file/img in chat

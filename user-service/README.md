@@ -42,7 +42,7 @@ This service handles user authentication, registration, and profile management.
 | POST   | `/auth/refresh` | Refresh access token |
 | POST   | `/auth/logout` | Logout user & clear cookies |
 
-### 👤 User Management
+### 👤 User 
 | Method | Endpoint      | Description                     |
 |--------|-------------|---------------------------------|
 | POST   | `/users` | Create new user with additional field |
@@ -50,6 +50,12 @@ This service handles user authentication, registration, and profile management.
 | GET    | `/users/:id` | Get user by ID |
 | PATCH  | `/users/:id` | Update user, sync with chat-service via kafka |
 | DELETE | `/users/:id` | Delete user, sync with chat-service via kafka |
+
+### 🖼️ Profile 
+| Method | Endpoint      | Description                     |
+|--------|-------------|---------------------------------|
+| GET    | `/profiles/:id` | Get profile by ID |
+| PATCH  | `/profiles/:id` | Update profile |
 
 ## 🔐 Authentication & Authorization
 - Uses **JWT Bearer Tokens** for API requests.
