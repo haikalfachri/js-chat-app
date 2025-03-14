@@ -23,13 +23,12 @@
 
 # Chat Service
 
-This service handles real-time messaging using WebSockets and Kafka.
+This service handles real-time messaging using WebSockets.
 
 ## 🚀 Features
 - **Real-time Messaging** with WebSockets
-- **Message Persistence** using Kafka
 - **JWT Authentication** for WebSocket connections
-- **Offline Message Storage** (Kafka ensures message delivery when users are offline)
+- **Offline Message Storage** using database
 
 ## 📜 API Endpoints
 
