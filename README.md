@@ -28,4 +28,5 @@
 ## To be updated
 - More error handling
 - Live status indicator
-- Send file/img in chat
+- Notification alert
+

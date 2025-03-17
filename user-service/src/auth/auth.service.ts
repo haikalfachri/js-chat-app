@@ -2,6 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { KafkaService } from 'src/kafka/kafka.service';
 import { AuthDto } from './dto/auth.dto';
 import { Response, Request } from 'express';
 
@@ -10,6 +11,7 @@ export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
+        private readonly kafkaService: KafkaService
     ) {}
 
     async validateUser(email: string, password: string) {
@@ -39,6 +41,10 @@ export class AuthService {
                 },
             },
             include: { profile: true },
+        });
+
+        await this.kafkaService.sendMessage('user.registered', {
+            id: user.id,
         });
 
         return user;

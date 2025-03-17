@@ -60,11 +60,11 @@ This service handles real-time messaging using WebSockets.
 - Connect to websocket (socket.io) and add websocket event to listen to new messages,
 - Create message is like a typing message and hit send button,
 - Since Swagger does not support real-time WebSockets, you can:
-  1. Use Postman / Socket.IO client to connect WebSocket.
-  2. Swagger only documents the payload, but won’t execute websocket events.
-  3. Here is the example of websocket consume using **Postman**:
+  1. Use Postman / Socket.IO client to connect WebSocket. (Socket.io tester: https://socket-test-client.netlify.app/)
+  2. Here is the example of websocket consume using **Postman** and **Socket.io tester**:
 
     ![WebSocket Postman Example](https://github.com/haikalfachri/js-chat-app/blob/master/chat-service/websocket-postman-example.png?raw=true)
+    ![WebSocket Socket.Io Example](https://github.com/haikalfachri/js-chat-app/blob/master/chat-service/websocket-socket-test-client-example.png?raw=true)
 
 ## 🛠 Setup & Installation
 ```sh

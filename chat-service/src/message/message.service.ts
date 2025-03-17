@@ -10,13 +10,14 @@ export class MessageService {
     private readonly messageGateway: MessageGateway,
   ) { }
 
-  async createMessage(dto: CreateMessageDto) {
+  async createMessage(dto: CreateMessageDto, fileUrl?: string) {
     try {
       const message = await this.prisma.message.create({
         data: {
           senderId: dto.senderId,
           receiverId: dto.receiverId,
           content: dto.content,
+          fileUrl: fileUrl,
         },
       });
 
@@ -25,9 +26,16 @@ export class MessageService {
       }
 
       // Emit message to WebSocket clients
-      this.messageGateway.handleMessage(dto.receiverId, message.content);
+      this.messageGateway.handleMessage(dto.receiverId, {
+        id: message.id,
+        senderId: dto.senderId,
+        receiverId: dto.receiverId,
+        content: dto.content,
+        fileUrl: fileUrl,
+        createdAt: message.createdAt,
+      });
 
-      return { message: 'Message sent successfully', data: message };
+      return message;
     } catch (error) {
       throw new Error('Error sending message: ' + error.message);
     }
